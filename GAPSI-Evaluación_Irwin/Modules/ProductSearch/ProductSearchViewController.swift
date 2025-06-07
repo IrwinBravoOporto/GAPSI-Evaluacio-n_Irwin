@@ -93,9 +93,7 @@ class ProductSearchViewController: UIViewController, ProductSearchViewProtocol {
         
         view.addSubview(emptyStateLabel)
         
-        NSLayoutConstraint.activate([
-            // ... constraints existentes ...
-            
+        NSLayoutConstraint.activate([            
             emptyStateLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             emptyStateLabel.centerYAnchor.constraint(equalTo: view.centerYAnchor),
             emptyStateLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 32),
@@ -339,3 +337,8 @@ extension ProductSearchViewController: SearchHistoryManagerProtocol {
     }
 }
 
+extension ProductSearchViewController: UITableViewDelegate {
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        presenter?.didSelectProduct(at: indexPath.row)
+    }
+}
