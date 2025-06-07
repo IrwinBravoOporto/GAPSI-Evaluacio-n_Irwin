@@ -15,6 +15,7 @@ protocol ProductSearchViewProtocol: AnyObject {
     func showLoading()
     func hideLoading()
     func showEmptyState(message: String)
+    func updateSearchHistory(_ history: [String])
 }
 
 protocol ProductSearchPresenterProtocol: AnyObject {
@@ -25,6 +26,9 @@ protocol ProductSearchPresenterProtocol: AnyObject {
     func searchProducts(with keyword: String)
     func loadMoreProducts()
     func didSelectProduct(_ product: Product)
+    func loadSearchHistory()
+    func didSelectProduct(at index: Int)
+    
 }
 
 protocol ProductSearchInteractorInputProtocol: AnyObject {

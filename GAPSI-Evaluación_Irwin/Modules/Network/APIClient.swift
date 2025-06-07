@@ -5,22 +5,8 @@
 //  Created by Irwin Bravo Oporto on 7/06/25.
 //
 
-//
-//  APIClient.swift
-//  GAPSI-Evaluación_Irwin
-//
-//  Created by Irwin Bravo Oporto on 7/06/25.
-//
-
 import Foundation
 
-enum NetworkError: Error {
-    case invalidURL
-    case noData
-    case decodingError
-    case apiError(String)
-    case httpError(Int, String)
-}
 
 protocol APIClientProtocol {
     func request<T: Decodable>(endpoint: Endpoint, completion: @escaping (Result<T, NetworkError>) -> Void)
@@ -139,10 +125,4 @@ class APIClient: APIClientProtocol {
         
         task.resume()
     }
-}
-
-// Estructura para manejar respuestas de error estándar de la API
-struct APIErrorResponse: Decodable {
-    let message: String
-    let code: Int?
 }

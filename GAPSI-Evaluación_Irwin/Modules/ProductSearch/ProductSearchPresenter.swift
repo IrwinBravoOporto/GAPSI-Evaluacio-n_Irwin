@@ -18,33 +18,83 @@ class ProductSearchPresenter: ProductSearchPresenterProtocol {
     private var isLoadingMore = false
     private var canLoadMore = true
     
+    private let historyManager: SearchHistoryManagerProtocol
+
+    init(interactor: ProductSearchInteractorInputProtocol,
+         router: ProductSearchRouterProtocol,
+         historyManager: SearchHistoryManagerProtocol = SearchHistoryManager.shared) {
+        self.interactor = interactor
+        self.router = router
+        self.historyManager = historyManager
+    }
+    
+    
+    func didSelectProduct(at index: Int) {
+        guard let product = product(at: index) else { return }
+        
+        router?.navigateToProductDetail(from: view , product: product)
+    }
+    
+    func product(at index: Int) -> Product? {
+        guard index < products.count else { return nil }
+        return products[index]
+    }
+    
     func searchProducts(with keyword: String) {
-        guard !keyword.isEmpty else { return }
+        let trimmedTerm = keyword.trimmingCharacters(in: .whitespacesAndNewlines)
+                
+        guard !trimmedTerm.isEmpty else {
+            DispatchQueue.main.async { [weak self] in
+                self?.view?.showError("El término de búsqueda no puede estar vacío")
+                self?.view?.showProducts([])
+            }
+            return
+        }
         
         currentKeyword = keyword
         currentPage = 1
         canLoadMore = true
         
-        DispatchQueue.main.async { [weak self] in
-            self?.view?.showLoading()
-        }
+        view?.showLoading()
+        historyManager.saveSearchTerm(keyword)
         
         interactor?.fetchProducts(keyword: keyword, page: currentPage)
     }
     
-    func loadMoreProducts() {
-        guard !isLoadingMore, canLoadMore else { return }
+    func validateSearchTerm(_ term: String) -> Bool {
+            let trimmedTerm = term.trimmingCharacters(in: .whitespacesAndNewlines)
+            return !trimmedTerm.isEmpty
+        }
+    
+    func loadSearchHistory() {
+        let history = SearchHistoryManager.shared.getSearchHistory()
+        currentKeyword = history.first ?? ""
         
+        DispatchQueue.main.async { [weak self] in
+            if history.isEmpty {
+                self?.view?.updateSearchHistory([])
+            } else {
+                self?.view?.updateSearchHistory(history)
+                self?.loadMoreProducts()
+            }
+        }
+    }
+    
+    func loadMoreProducts() {
         isLoadingMore = true
         currentPage += 1
-        interactor?.fetchProducts(keyword: currentKeyword, page: currentPage)
+        // 3. Validar el keyword
+        if currentKeyword.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            debugPrint("🚫 No se puede cargar más - keyword inválido: \(currentKeyword)")
+        } else {
+            debugPrint("🔍 Cargando más productos para: '\(currentKeyword)', página: \(currentPage)")
+            interactor?.fetchProducts(keyword: currentKeyword, page: currentPage)
+        }
     }
     
     func didSelectProduct(_ product: Product) {
         router?.navigateToProductDetail(from: view, product: product)
     }
-    
-  
 }
 
 extension ProductSearchPresenter: ProductSearchInteractorOutputProtocol {
@@ -61,9 +111,8 @@ extension ProductSearchPresenter: ProductSearchInteractorOutputProtocol {
             }
             
             self.isLoadingMore = false
-            self.canLoadMore = !products.isEmpty // Solo cargar más si hay resultados
+            self.canLoadMore = !products.isEmpty
             
-            // Actualizar vista
             if self.currentPage == 1 && products.isEmpty {
                 self.view?.showEmptyState(message: "No encontramos productos con tu búsqueda.")
             } else {

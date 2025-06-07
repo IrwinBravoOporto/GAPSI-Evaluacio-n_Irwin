@@ -147,11 +147,10 @@ class ProductCell: UICollectionViewCell {
     }
     
     func setImage(_ image: UIImage?) {
-        // Usar sistema de prioridad de imágenes
+
         if let image = image {
             imageView.image = image
         } else {
-            // Imagen por defecto con animación de transición
             UIView.transition(with: imageView,
                               duration: 0.3,
                               options: .transitionCrossDissolve,
@@ -161,7 +160,6 @@ class ProductCell: UICollectionViewCell {
                               completion: nil)
         }
         
-        // Mejorar la visualización de imágenes con bordes redondeados
         imageView.layer.cornerRadius = 8
         imageView.layer.masksToBounds = true
         imageView.layer.borderWidth = 0.5

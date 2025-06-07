@@ -10,10 +10,15 @@ import UIKit
 class ProductSearchRouter: ProductSearchRouterProtocol {
     static func createModule() -> UIViewController {
         let view = ProductSearchViewController()
-        let presenter = ProductSearchPresenter()
-        let interactor = ProductSearchInteractor(
-            apiClient: APIClient())
+        let interactor = ProductSearchInteractor(apiClient: APIClient())
         let router = ProductSearchRouter()
+        
+        // Inicializar el presenter con los parámetros requeridos
+        let presenter = ProductSearchPresenter(
+            interactor: interactor,
+            router: router,
+            historyManager: SearchHistoryManager.shared
+        )
         
         view.presenter = presenter
         presenter.view = view
@@ -26,5 +31,9 @@ class ProductSearchRouter: ProductSearchRouterProtocol {
     
     func navigateToProductDetail(from view: ProductSearchViewProtocol?, product: Product) {
         // Implementar navegación a detalle de producto
+        guard let viewController = view as? UIViewController else { return }
+        
+        let detailVC = ProductDetailRouter.createModule(with: product)
+        viewController.navigationController?.pushViewController(detailVC, animated: true)
     }
 }

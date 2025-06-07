@@ -60,7 +60,6 @@ struct Product: Decodable {
         let numberOfReviews: Int?
     }
     
-    // Formateador de precio
     var formattedPrice: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
@@ -68,7 +67,6 @@ struct Product: Decodable {
         return formatter.string(from: NSNumber(value: price ?? 0)) ?? "$\(String(format: "%.2f", price ?? 0))"
     }
     
-    // Valoración en estrellas (1-5)
     var starRating: Int {
         return Int(round(rating?.averageRating ?? 0))
     }

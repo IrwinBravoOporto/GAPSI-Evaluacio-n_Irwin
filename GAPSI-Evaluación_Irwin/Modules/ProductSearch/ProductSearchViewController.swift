@@ -14,6 +14,8 @@ class ProductSearchViewController: UIViewController, ProductSearchViewProtocol {
         let controller = UISearchController(searchResultsController: nil)
         controller.searchBar.placeholder = "Buscar productos..."
         controller.searchBar.delegate = self
+        controller.searchResultsUpdater = self // Nuevo
+        controller.obscuresBackgroundDuringPresentation = false
         return controller
     }()
     
@@ -62,7 +64,7 @@ class ProductSearchViewController: UIViewController, ProductSearchViewProtocol {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        presenter?.searchProducts(with: "Sony")
+        presenter?.loadSearchHistory()
         setupCollectionView()
     }
     
@@ -113,12 +115,14 @@ class ProductSearchViewController: UIViewController, ProductSearchViewProtocol {
         } else {
             hideEmptyState()
         }
+        
     }
+    
+    
     
     func showError(_ message: String) {
         showEmptyState(message: "Ocurrió un error: \(message)")
         
-        // Opcional: También puedes mantener el alert como respaldo
         let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default))
         present(alert, animated: true)
@@ -137,17 +141,14 @@ class ProductSearchViewController: UIViewController, ProductSearchViewProtocol {
     
     func showLoading() {
         loadingIndicator.startAnimating()
-        hideEmptyState() // Asegurarse de ocultar mensajes anteriores
+        hideEmptyState()
     }
     
     func hideLoading() {
         loadingIndicator.stopAnimating()
     }
     
-    func updateSearchHistory(_ history: [String]) {
-        searchHistory = history
-        print("history: \(history)")
-    }
+    
 }
 
 extension ProductSearchViewController: UICollectionViewDataSourcePrefetching {
@@ -187,14 +188,12 @@ extension ProductSearchViewController: UICollectionViewDataSource {
         let product = products[indexPath.item]
         cell.configure(with: product)
         
-        // Cargar imagen con caché
         loadImage(for: product, at: indexPath, in: collectionView)
         
         return cell
     }
     
     private func loadImage(for product: Product, at indexPath: IndexPath, in collectionView: UICollectionView) {
-        // Configurar imagen por defecto primero
         DispatchQueue.main.async {
             if let cell = collectionView.cellForItem(at: indexPath) as? ProductCell {
                 cell.setImage(UIImage(named: "EmptyProduct"))
@@ -242,7 +241,6 @@ extension ProductSearchViewController: UICollectionViewDataSource {
                 }.resume()
             }
             
-            // Cancelar cualquier operación previa para esta celda
             imageLoadingOperations[indexPath]?.cancel()
             imageLoadingOperations[indexPath] = operation
             imageLoadingQueue.async {
@@ -263,7 +261,6 @@ extension ProductSearchViewController: UICollectionViewDataSource {
 
 extension ProductSearchViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didEndDisplaying cell: UICollectionViewCell, forItemAt indexPath: IndexPath) {
-        // Cancelar la carga de imagen si la celda ya no es visible
         imageLoadingOperations[indexPath]?.cancel()
     }
 }
@@ -272,8 +269,8 @@ extension ProductSearchViewController: UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         let padding: CGFloat = 16
         let collectionViewWidth = collectionView.frame.width - (padding * 2)
-        let width = (collectionViewWidth - 8) / 2 // Dos columnas con espacio entre ellas
-        return CGSize(width: width, height: width * 1.6) // Altura proporcional
+        let width = (collectionViewWidth - 8) / 2
+        return CGSize(width: width, height: width * 1.6)
     }
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
@@ -299,3 +296,46 @@ extension ProductSearchViewController: UIScrollViewDelegate {
         }
     }
 }
+
+extension ProductSearchViewController: UISearchResultsUpdating {
+    func updateSearchResults(for searchController: UISearchController) {
+            // historial
+        }
+    
+    func updateSearchHistory(_ history: [String]) {
+        searchHistory = history
+    }
+}
+
+
+extension ProductSearchViewController: SearchHistoryManagerProtocol {
+    func saveSearchTerm(_ term: String) {
+        guard !term.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        
+        SearchHistoryManager.shared.saveSearchTerm(term)
+        
+        searchHistory = SearchHistoryManager.shared.getSearchHistory()
+       
+    }
+    
+    func getSearchHistory() -> [String] {
+        let history = SearchHistoryManager.shared.getSearchHistory()
+        self.searchHistory = history
+        return history
+    }
+    
+    func clearSearchHistory() {
+        SearchHistoryManager.shared.clearSearchHistory()
+        
+        searchHistory = []
+        
+        let alert = UIAlertController(
+            title: "Historial borrado",
+            message: "Se han eliminado todas las búsquedas anteriores",
+            preferredStyle: .alert
+        )
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(alert, animated: true)
+    }
+}
+

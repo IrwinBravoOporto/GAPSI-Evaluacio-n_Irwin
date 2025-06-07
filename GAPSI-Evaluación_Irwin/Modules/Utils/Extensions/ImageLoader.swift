@@ -15,7 +15,6 @@ class ImageLoader {
     func loadImage(_ url: URL, _ completion: @escaping (Result<UIImage, Error>) -> Void) -> UUID? {
         let cacheKey = url.absoluteString as NSString
         
-        // Retornar imagen si está en caché
         if let image = cache.object(forKey: cacheKey) {
             completion(.success(image))
             return nil
